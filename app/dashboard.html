@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alemeno Transaction Pipeline Dashboard</title>
+    <!-- Outfit Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #0c0c0e;
+            --card-bg: rgba(22, 22, 27, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --accent-primary: #7c3aed; /* Violet */
+            --accent-secondary: #2563eb; /* Blue */
+            --success: #10b981; /* Emerald */
+            --warning: #f59e0b; /* Amber */
+            --danger: #ef4444; /* Rose */
+            --font-family: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(124, 58, 237, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.05) 0%, transparent 40%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        .logo-section h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-section p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        .health-status {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px currentcolor;
+        }
+
+        .status-dot.healthy {
+            background-color: var(--success);
+            color: var(--success);
+        }
+
+        .status-dot.unhealthy {
+            background-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card Base */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Upload Area */
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-primary);
+            background: rgba(124, 58, 237, 0.02);
+        }
+
+        .upload-zone svg {
+            width: 40px;
+            height: 40px;
+            fill: none;
+            stroke: var(--text-secondary);
+            stroke-width: 2;
+            margin-bottom: 1rem;
+        }
+
+        .upload-zone h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-zone p {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .selected-file-banner {
+            margin-top: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.8rem;
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.85rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-family: var(--font-family);
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            background: #27272a;
+            color: #71717a;
+            cursor: not-allowed;
+        }
+
+        /* Jobs Queue / History */
+        .jobs-list {
+            margin-top: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .jobs-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .jobs-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .job-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 0.9rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .job-item:hover, .job-item.active {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .job-item.active {
+            border-left: 3px solid var(--accent-primary);
+        }
+
+        .job-info h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.2rem;
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .job-info span {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.6rem;
+            border-radius: 50px;
+            text-transform: uppercase;
+        }
+
+        .badge.pending {
+            background: rgba(113, 113, 122, 0.15);
+            color: #a1a1aa;
+        }
+
+        .badge.processing {
+            background: rgba(124, 58, 237, 0.15);
+            color: #c084fc;
+            animation: pulse-badge 1.5s infinite;
+        }
+
+        .badge.completed {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .badge.failed {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        @keyframes pulse-badge {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Detail Panel Placeholder */
+        .detail-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .detail-placeholder svg {
+            width: 60px;
+            height: 60px;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 1.5;
+            margin-bottom: 1.5rem;
+            fill: none;
+        }
+
+        /* Results Panel */
+        .results-panel {
+            display: none;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Summary Stats Cards */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+        }
+
+        .stat-card span {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card h2 {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .stat-card.risk-low h2 { color: var(--success); }
+        .stat-card.risk-medium h2 { color: var(--warning); }
+        .stat-card.risk-high h2 { color: var(--danger); }
+
+        /* Narrative Callout */
+        .narrative-card {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(37, 99, 235, 0.05) 100%);
+            border: 1px solid rgba(124, 58, 237, 0.2);
+            border-radius: 14px;
+            padding: 1.5rem;
+            display: flex;
+            gap: 1.2rem;
+            align-items: flex-start;
+        }
+
+        .narrative-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+        }
+
+        .narrative-content h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: #a78bfa;
+        }
+
+        .narrative-content p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        /* Two Column Layout for Visualizations */
+        .visuals-row {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .visuals-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Chart container */
+        .chart-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 250px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        /* Anomalies List */
+        .anomalies-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .anomaly-card {
+            background: rgba(239, 68, 68, 0.03);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 10px;
+            padding: 0.9rem 1.2rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+
+        .anomaly-card svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--danger);
+            stroke-width: 2;
+            fill: none;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .anomaly-details h5 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .anomaly-details p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .anomaly-details span {
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .no-anomalies {
+            text-align: center;
+            color: var(--success);
+            padding: 2rem;
+            font-size: 0.9rem;
+            background: rgba(16, 185, 129, 0.03);
+            border: 1px dashed rgba(16, 185, 129, 0.15);
+            border-radius: 10px;
+        }
+
+        /* Data Table */
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr.anomaly-row {
+            background: rgba(239, 68, 68, 0.01);
+        }
+
+        .table-tag {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            display: inline-block;
+        }
+
+        .table-tag.anomaly {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-section">
+                <h1>Alemeno Transactions</h1>
+                <p>Asynchronous AI Cleaning & Summarization Pipeline</p>
+            </div>
+            <div class="health-status">
+                <span class="status-dot healthy" id="db-status-dot"></span> Database
+                <span class="status-dot healthy" id="redis-status-dot"></span> Redis
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Sidebar: Upload & Job History -->
+            <div class="sidebar-column">
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div class="card-title">Upload Data</div>
+                    <div class="upload-zone" onclick="document.getElementById('file-input').click()" id="drop-zone">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                        </svg>
+                        <h3>Select CSV File</h3>
+                        <p>Drag and drop transactions CSV here</p>
+                        <input type="file" id="file-input" accept=".csv">
+                    </div>
+                    <div class="selected-file-banner" id="file-banner">
+                        <span id="file-name" style="font-weight: 500;">transactions.csv</span>
+                        <span style="color: var(--text-secondary); cursor: pointer;" onclick="clearFile(event)">✕</span>
+                    </div>
+                    <button class="btn" id="upload-btn" disabled onclick="uploadFile()">Execute Pipeline</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">
+                        <span>Job History</span>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; cursor: pointer;" onclick="fetchJobs()">Refresh</span>
+                    </div>
+                    <div class="jobs-list" id="jobs-list-container">
+                        <!-- Jobs injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area: Results Visualization -->
+            <div class="main-column">
+                <!-- Placeholder when no job selected -->
+                <div class="card detail-placeholder" id="placeholder-box">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                    <h2>Pipeline Monitor</h2>
+                    <p style="margin-top: 0.5rem; max-width: 400px;">Upload a transaction file to trigger processing, or select a job from the history sidebar to view reports.</p>
+                </div>
+
+                <!-- Main results display -->
+                <div class="results-panel" id="results-panel-box">
+                    <!-- Stat Cards -->
+                    <div class="stats-row" id="stats-row-container">
+                        <!-- Stats injected here -->
+                    </div>
+
+                    <!-- AI Callout Narrative -->
+                    <div class="narrative-card" id="narrative-box">
+                        <div class="narrative-avatar">AI</div>
+                        <div class="narrative-content">
+                            <h4>Financial Risk Narrative</h4>
+                            <p id="narrative-text"></p>
+                        </div>
+                    </div>
+
+                    <!-- Visual Row -->
+                    <div class="visuals-row">
+                        <!-- Left: Category Breakdown Chart -->
+                        <div class="card">
+                            <div class="card-title">Category Breakdown</div>
+                            <div class="chart-box">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Right: Flagged Anomalies -->
+                        <div class="card">
+                            <div class="card-title" style="color: var(--danger)">Flagged Anomalies</div>
+                            <div class="anomalies-list" id="anomalies-list-container">
+                                <!-- Anomalies list -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Processed Data Table -->
+                    <div class="card">
+                        <div class="card-title">Cleaned & Categorized Data</div>
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Date</th>
+                                        <th>Merchant</th>
+                                        <th>Amount</th>
+                                        <th>Category</th>
+                                        <th>Account</th>
+                                        <th>Flags</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactions-table-body">
+                                    <!-- Table records -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "";
+        let selectedFile = null;
+        let activeJobId = null;
+        let chartInstance = null;
+        let pollTimer = null;
+
+        // Health Checks
+        async function runHealthCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                const dbDot = document.getElementById("db-status-dot");
+                const redisDot = document.getElementById("redis-status-dot");
+
+                if (data.services.database === "healthy") {
+                    dbDot.className = "status-dot healthy";
+                } else {
+                    dbDot.className = "status-dot unhealthy";
+                }
+
+                if (data.services.redis === "healthy") {
+                    redisDot.className = "status-dot healthy";
+                } else {
+                    redisDot.className = "status-dot unhealthy";
+                }
+            } catch (err) {
+                console.error("Health check failed:", err);
+            }
+        }
+
+        // File Selection handling
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const fileBanner = document.getElementById('file-banner');
+        const fileNameEl = document.getElementById('file-name');
+        const uploadBtn = document.getElementById('upload-btn');
+
+        // Drag and drop events
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = 'var(--accent-primary)';
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) handleFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (fileInput.files.length) handleFile(fileInput.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.name.endsWith('.csv')) {
+                alert('Only CSV files are supported!');
+                return;
+            }
+            selectedFile = file;
+            fileNameEl.textContent = file.name;
+            fileBanner.style.display = 'flex';
+            uploadBtn.removeAttribute('disabled');
+        }
+
+        function clearFile(e) {
+            e.stopPropagation();
+            selectedFile = null;
+            fileInput.value = '';
+            fileBanner.style.display = 'none';
+            uploadBtn.setAttribute('disabled', 'true');
+        }
+
+        // Uploading pipeline file
+        async function uploadFile() {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            uploadBtn.setAttribute('disabled', 'true');
+            uploadBtn.textContent = 'Uploading...';
+
+            try {
+                const response = await fetch(`${API_BASE}/jobs/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Upload failed');
+                
+                const data = await response.json();
+                clearFile({ stopPropagation: () => {} });
+                
+                // Refresh list and start polling
+                await fetchJobs();
+                selectJob(data.job_id);
+            } catch (err) {
+                alert('Error uploading file: ' + err.message);
+            } finally {
+                uploadBtn.textContent = 'Execute Pipeline';
+            }
+        }
+
+        // Retrieve and list previous jobs
+        async function fetchJobs() {
+            try {
+                const response = await fetch(`${API_BASE}/jobs`);
+                const data = await response.json();
+                const container = document.getElementById("jobs-list-container");
+                container.innerHTML = "";
+
+                if (data.jobs.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; color: var(--text-secondary); font-size: 0.85rem; padding: 2rem;">No jobs found</div>`;
+                    return;
+                }
+
+                data.jobs.forEach(job => {
+                    const item = document.createElement("div");
+                    item.className = `job-item ${job.id === activeJobId ? 'active' : ''}`;
+                    item.onclick = () => selectJob(job.id);
+
+                    const dateStr = new Date(job.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' | ' + new Date(job.created_at).toLocaleDateString();
+
+                    item.innerHTML = `
+                        <div class="job-info">
+                            <h4>${job.filename}</h4>
+                            <span>${dateStr}</span>
+                        </div>
+                        <span class="badge ${job.status.toLowerCase()}">${job.status}</span>
+                    `;
+                    container.appendChild(item);
+                });
+            } catch (err) {
+                console.error("Error loading jobs history:", err);
+            }
+        }
+
+        // Selecting a job to inspect results
+        function selectJob(jobId) {
+            activeJobId = jobId;
+            
+            // Mark as active in list
+            document.querySelectorAll(".job-item").forEach(item => {
+                item.classList.remove("active");
+            });
+            fetchJobs(); // redraw active state
+
+            // Stop any active polling
+            if (pollTimer) clearInterval(pollTimer);
+
+            // Fetch current job status
+            pollJob(jobId);
+        }
+
+        async function pollJob(jobId) {
+            try {
+                const response = await fetch(`${API_BASE}/jobs/${jobId}/status`);
+                const data = await response.json();
+
+                if (data.status === "COMPLETED") {
+                    showResults(jobId);
+                } else if (data.status === "FAILED") {
+                    showFailure(data);
+                } else {
+                    // Show processing state in main panel
+                    showProcessing(data);
+                    // Poll again in 2 seconds
+                    pollTimer = setTimeout(() => pollJob(jobId), 2000);
+                }
+            } catch (err) {
+                console.error("Polling job status error:", err);
+            }
+        }
+
+        function showProcessing(job) {
+            document.getElementById("placeholder-box").style.display = "none";
+            document.getElementById("results-panel-box").style.display = "none";
+            
+            let loadingBox = document.getElementById("loading-state-box");
+            if (!loadingBox) {
+                loadingBox = document.createElement("div");
+                loadingBox.id = "loading-state-box";
+                loadingBox.className = "card detail-placeholder";
+                document.getElementById("placeholder-box").parentNode.appendChild(loadingBox);
+            }
+
+            loadingBox.style.display = "flex";
+            loadingBox.innerHTML = `
+                <div class="status-dot processing" style="width: 40px; height: 40px; margin-bottom: 1.5rem; background-color: var(--accent-primary);"></div>
+                <h2>Pipeline Processing</h2>
+                <p style="margin-top: 0.5rem; color: var(--text-secondary);">Analyzing transaction list, calculating statistical outlier anomalies, and executing LLM classification...</p>
+                <div style="font-size: 0.8rem; margin-top: 1rem; color: var(--text-secondary);">Job ID: ${job.job_id} | Status: <span class="badge processing" style="margin-left: 0.2rem;">${job.status}</span></div>
+            `;
+        }
+
+        function showFailure(job) {
+            document.getElementById("placeholder-box").style.display = "none";
+            document.getElementById("results-panel-box").style.display = "none";
+            if (document.getElementById("loading-state-box")) {
+                document.getElementById("loading-state-box").style.display = "none";
+            }
+
+            let failBox = document.getElementById("fail-state-box");
+            if (!failBox) {
+                failBox = document.createElement("div");
+                failBox.id = "fail-state-box";
+                failBox.className = "card detail-placeholder";
+                document.getElementById("placeholder-box").parentNode.appendChild(failBox);
+            }
+
+            failBox.style.display = "flex";
+            failBox.innerHTML = `
+                <div class="status-dot" style="width: 40px; height: 40px; margin-bottom: 1.5rem; background-color: var(--danger); box-shadow: 0 0 15px var(--danger);"></div>
+                <h2 style="color: var(--danger)">Pipeline Execution Failed</h2>
+                <p style="margin-top: 0.5rem; color: var(--text-secondary); max-width: 500px;">${job.error_message || 'An unknown error occurred inside the Celery worker.'}</p>
+                <div style="font-size: 0.8rem; margin-top: 1rem; color: var(--text-secondary);">Job ID: ${job.job_id}</div>
+            `;
+        }
+
+        async function showResults(jobId) {
+            document.getElementById("placeholder-box").style.display = "none";
+            if (document.getElementById("loading-state-box")) {
+                document.getElementById("loading-state-box").style.display = "none";
+            }
+            if (document.getElementById("fail-state-box")) {
+                document.getElementById("fail-state-box").style.display = "none";
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/jobs/${jobId}/results`);
+                const data = await response.json();
+
+                const resultsPanel = document.getElementById("results-panel-box");
+                resultsPanel.style.display = "flex";
+
+                // 1. Populate summary stats cards
+                const statsContainer = document.getElementById("stats-row-container");
+                const totalInr = data.llm_summary ? data.llm_summary.total_spend_inr : 0;
+                const totalUsd = data.llm_summary ? data.llm_summary.total_spend_usd : 0;
+                const anomalyCount = data.llm_summary ? data.llm_summary.anomaly_count : 0;
+                const riskLevel = data.llm_summary ? data.llm_summary.risk_level : "low";
+
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <span>Original Rows</span>
+                        <h2>${data.row_count_raw}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <span>Cleaned Rows</span>
+                        <h2>${data.row_count_clean}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <span>Total INR Spend</span>
+                        <h2>₹${totalInr.toLocaleString([], {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h2>
+                    </div>
+                    <div class="stat-card">
+                        <span>Total USD Spend</span>
+                        <h2>$${totalUsd.toLocaleString([], {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h2>
+                    </div>
+                    <div class="stat-card risk-${riskLevel}">
+                        <span>Overall Risk Rating</span>
+                        <h2 style="text-transform: uppercase;">${riskLevel}</h2>
+                    </div>
+                `;
+
+                // 2. Populate narrative
+                const narrativeBox = document.getElementById("narrative-box");
+                const narrativeText = document.getElementById("narrative-text");
+                if (data.llm_summary && data.llm_summary.narrative) {
+                    narrativeBox.style.display = "flex";
+                    narrativeText.textContent = data.llm_summary.narrative;
+                } else {
+                    narrativeBox.style.display = "none";
+                }
+
+                // 3. Render Chart
+                renderCategoryChart(data.spend_breakdown_by_category);
+
+                // 4. Populate anomalies list
+                const anomaliesContainer = document.getElementById("anomalies-list-container");
+                anomaliesContainer.innerHTML = "";
+                if (data.flagged_anomalies.length === 0) {
+                    anomaliesContainer.innerHTML = `<div class="no-anomalies">No anomalies flagged in this dataset</div>`;
+                } else {
+                    data.flagged_anomalies.forEach(anomaly => {
+                        const card = document.createElement("div");
+                        card.className = "anomaly-card";
+                        card.innerHTML = `
+                            <svg viewBox="0 0 24 24">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/>
+                            </svg>
+                            <div class="anomaly-details">
+                                <h5>${anomaly.merchant}</h5>
+                                <p>Amount: <span>${anomaly.currency === 'INR' ? '₹' : '$'}${anomaly.amount}</span> | Account: <span>${anomaly.account_id}</span></p>
+                                <p style="color: #fda4af; margin-top: 0.25rem;">Reason: ${anomaly.anomaly_reason}</p>
+                            </div>
+                        `;
+                        anomaliesContainer.appendChild(card);
+                    });
+                }
+
+                // 5. Populate Data Table
+                const tableBody = document.getElementById("transactions-table-body");
+                tableBody.innerHTML = "";
+                data.cleaned_transactions.forEach(t => {
+                    const row = document.createElement("tr");
+                    if (t.is_anomaly) row.className = "anomaly-row";
+
+                    const formattedAmount = t.currency === 'INR' ? `₹${t.amount.toFixed(2)}` : `$${t.amount.toFixed(2)}`;
+                    const tagClass = t.is_anomaly ? 'table-tag anomaly' : 'table-tag';
+                    const tagLabel = t.is_anomaly ? 'Anomaly' : 'Clean';
+
+                    row.innerHTML = `
+                        <td style="font-weight: 500;">${t.txn_id || '-'}</td>
+                        <td>${t.date}</td>
+                        <td style="font-weight: 600;">${t.merchant}</td>
+                        <td>${formattedAmount}</td>
+                        <td><span class="table-tag">${t.category}</span></td>
+                        <td>${t.account_id}</td>
+                        <td><span class="${tagClass}">${tagLabel}</span></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+
+            } catch (err) {
+                console.error("Displaying results error:", err);
+            }
+        }
+
+        function renderCategoryChart(breakdown) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            // Extract categories and sum totals in INR equivalent (assuming rough 1 USD = 83 INR for visualization scale)
+            const labels = [];
+            const dataValues = [];
+
+            Object.entries(breakdown).forEach(([category, spendObj]) => {
+                labels.push(category);
+                const inr = spendObj.INR || 0;
+                const usd = spendObj.USD || 0;
+                dataValues.push(inr + (usd * 83));
+            });
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            if (labels.length === 0) {
+                // empty chart
+                return;
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: [
+                            '#8b5cf6', // Violet
+                            '#3b82f6', // Blue
+                            '#ec4899', // Pink
+                            '#10b981', // Emerald
+                            '#f59e0b', // Amber
+                            '#06b6d4', // Cyan
+                            '#f43f5e', // Rose
+                            '#71717a'  // Zinc
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#18181b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Outfit',
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const category = context.label;
+                                    const spendObj = breakdown[category];
+                                    let label = `${category}: `;
+                                    const parts = [];
+                                    if (spendObj.INR) parts.push(`₹${spendObj.INR.toLocaleString()}`);
+                                    if (spendObj.USD) parts.push(`$${spendObj.USD.toLocaleString()}`);
+                                    return label + parts.join(' + ');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Init
+        runHealthCheck();
+        fetchJobs();
+        // Periodically verify health
+        setInterval(runHealthCheck, 10000);
+    </script>
+</body>
+</html>

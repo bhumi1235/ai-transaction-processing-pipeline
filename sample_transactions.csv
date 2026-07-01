@@ -1,0 +1,12 @@
+txn_id,date,merchant,amount,currency,status,category,account_id,notes
+TXN1001,01-07-2026,Swiggy,450.00,INR,SUCCESS,Food,ACC_01,Dinner with friends
+TXN1002,2026/07/02,Ola,$12.50,USD,success,Transport,ACC_01,Ride to office
+TXN1003,03-07-2026,Amazon,12000.00,INR,PENDING,,ACC_01,New headphones
+TXN1004,2026/07/04,Swiggy,$25.00,USD,failed,Food,ACC_02,Lunch order in USD
+,05-07-2026,IRCTC,850.00,inr,SUCCESS,Travel,ACC_02,
+TXN1006,06-07-2026,Netflix,499.00,INR,SUCCESS,Entertainment,ACC_03,Monthly sub
+TXN1007,07-07-2026,Swiggy,150.00,INR,SUCCESS,Food,ACC_01,Snack
+TXN1008,08-07-2026,Uber,250.00,INR,SUCCESS,Transport,ACC_01,Return ride
+TXN1001,01-07-2026,Swiggy,450.00,INR,SUCCESS,Food,ACC_01,Dinner with friends
+TXN1009,09-07-2026,IRCTC,45.00,USD,SUCCESS,,ACC_03,Ticket in USD (anomaly)
+TXN1010,10-07-2026,OutlierStore,50000.00,INR,SUCCESS,Shopping,ACC_01,Huge transaction (outlier)
