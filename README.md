@@ -37,7 +37,7 @@ graph TD
 ## 📂 Directory Structure
 
 ```text
-/Alemeno-assignment
+/async-transaction-pipeline
 │   docker-compose.yml     # Docker Compose services definition
 │   Dockerfile             # Multi-stage container build
 │   requirements.txt       # Python dependencies
